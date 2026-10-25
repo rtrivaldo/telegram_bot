@@ -42,9 +42,10 @@
     "skipLibCheck": true,
 
     // Additional Options
-    "moduleResolution": "Node",
+    "moduleResolution": "node10",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "6.0"
   },
 
   "include": ["src/**/*.ts"]
