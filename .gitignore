@@ -1,3 +1,7 @@
 node_modules/
 .env
 dist/
+
+# Local user database
+data/users.json
+data/users.json.tmp
