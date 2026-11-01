@@ -2,7 +2,7 @@ import { env } from "./config/env.js";
 import { db } from "./config/database.js";
 import { initializeDatabase } from "./config/init-database.js";
 import app from "./api/app.js";
-import { bot } from "./bot/bot.js";
+import { startBot, bot } from "./bot/bot.js";
 
 async function startApplication(): Promise<void> {
     try {
@@ -20,7 +20,7 @@ async function startApplication(): Promise<void> {
         });
 
         // Start Telegram bot
-        await bot.launch();
+        await startBot();
 
         console.log("Telegram bot started successfully.");
 

@@ -1,13 +1,20 @@
 import { Router } from "express";
+import { botStatus } from "../../bot/bot.js";
 
 const router = Router();
 
-// Endpoint untuk memeriksa apakah API berjalan.
 router.get("/", (_req, res) => {
     res.status(200).json({
         success: true,
-        message: "API is running",
         timestamp: new Date().toISOString(),
+        services: {
+            api: {
+                status: "running",
+            },
+            telegramBot: {
+                status: botStatus.running ? "running" : "stopped",
+            },
+        },
     });
 });
 

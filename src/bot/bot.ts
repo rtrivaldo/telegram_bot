@@ -5,6 +5,28 @@ import { registerAuthCommands } from "./commands/auth.commands.js";
 // Membuat instance Telegram Bot.
 export const bot = new Telegraf(env.BOT_TOKEN);
 
+// Status Telegram Bot.
+export const botStatus = {
+    running: false,
+};
+
+// Memulai Telegram Bot.
+export async function startBot() {
+    try {
+        await bot.launch(
+            {},
+            () => {
+                botStatus.running = true;
+                console.log("Telegram bot is running.");
+            }
+        );
+    } catch (error) {
+        botStatus.running = false;
+        console.error("Failed to start Telegram bot:", error);
+        throw error;
+    }
+}
+
 // Command awal.
 bot.start(async (ctx) => {
     await ctx.reply(
