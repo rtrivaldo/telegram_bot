@@ -31,10 +31,16 @@ function isValidRole(value: string): value is UserRole {
 }
 
 // Mengambil argumen dari teks command.
-// Contoh: /approve 123456789 sales
-// Hasil: ["123456789", "sales"]
 function getCommandArgs(text: string): string[] {
     return text.trim().split(/\s+/).slice(1);
+}
+
+// Memformat tanggal untuk ditampilkan di Telegram.
+function formatDate(date: Date): string {
+    return new Date(date).toLocaleString("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short",
+    });
 }
 
 // Mendaftarkan seluruh command autentikasi dan administrasi.
@@ -44,15 +50,20 @@ export function registerAuthCommands(bot: Telegraf): void {
     // REGISTRATION COMMAND
     // ==========================================
 
-    // Mendaftarkan pengguna menggunakan Telegram ID.
     bot.command("register", async (ctx) => {
         const telegramUser = ctx.from;
 
         const user = await authService.register({
             telegramId: telegramUser.id,
-            username: telegramUser.username ?? null,
             firstName: telegramUser.first_name,
-            lastName: telegramUser.last_name ?? null,
+
+            ...(telegramUser.username
+                ? { username: telegramUser.username }
+                : {}),
+
+            ...(telegramUser.last_name
+                ? { lastName: telegramUser.last_name }
+                : {}),
         });
 
         // Administrator yang terdaftar di .env tidak perlu registrasi.
@@ -62,7 +73,6 @@ export function registerAuthCommands(bot: Telegraf): void {
             );
         }
 
-        // Memberikan respons berdasarkan status akun.
         switch (user.status) {
             case "active":
                 return ctx.reply(
@@ -91,25 +101,23 @@ export function registerAuthCommands(bot: Telegraf): void {
     // USER PROFILE COMMAND
     // ==========================================
 
-    // Menampilkan informasi akun pengguna.
     bot.command("me", async (ctx) => {
         const telegramUser = ctx.from;
 
-        // Administrator utama dikenali melalui ADMIN_IDS.
-        if (authService.isAdmin(telegramUser.id)) {
+        // Administrator dikenali melalui ADMIN_IDS atau database.
+        if (await isAdmin(telegramUser.id)) {
             return ctx.reply(
                 [
                     "PROFIL PENGGUNA",
                     "",
                     `Telegram ID: ${telegramUser.id}`,
-                    `Nama: ${telegramUser.first_name}`,
+                    `Nama: ${telegramUser.first_name} ${telegramUser.last_name ?? ""}`.trim(),
                     "Role: admin",
                     "Status: active",
                 ].join("\n")
             );
         }
 
-        // Mengambil informasi pengguna dari database.
         const user = await authService.findUser(telegramUser.id);
 
         if (!user) {
@@ -118,17 +126,16 @@ export function registerAuthCommands(bot: Telegraf): void {
             );
         }
 
-        // Menampilkan informasi akun pengguna.
         return ctx.reply(
             [
                 "PROFIL PENGGUNA",
                 "",
-                `Telegram ID: ${user.telegramId}`,
+                `Telegram ID: ${user.telegram_id}`,
                 `Username: ${user.username ?? "-"}`,
-                `Nama: ${user.firstName}`,
+                `Nama: ${user.first_name}`,
                 `Role: ${user.role ?? "-"}`,
                 `Status: ${user.status}`,
-                `Terdaftar: ${user.createdAt}`,
+                `Terdaftar: ${formatDate(user.created_at)}`,
             ].join("\n")
         );
     });
@@ -154,13 +161,12 @@ export function registerAuthCommands(bot: Telegraf): void {
             );
         }
 
-        // Mengubah data pengguna menjadi daftar teks.
         const messages = users.map((user, index) =>
             [
-                `${index + 1}. ${user.firstName}`,
-                `ID: ${user.telegramId}`,
+                `${index + 1}. ${user.first_name}`,
+                `ID: ${user.telegram_id}`,
                 `Username: ${user.username ?? "-"}`,
-                `Tanggal: ${user.createdAt}`,
+                `Tanggal: ${formatDate(user.created_at)}`,
             ].join("\n")
         );
 
@@ -185,7 +191,6 @@ export function registerAuthCommands(bot: Telegraf): void {
         const telegramId = args[0];
         const role = args[1];
 
-        // Memvalidasi Telegram ID dan role.
         if (
             args.length !== 2 ||
             !telegramId ||
@@ -211,13 +216,13 @@ export function registerAuthCommands(bot: Telegraf): void {
         }
 
         await ctx.reply(
-            `Pengguna ${user.firstName} berhasil disetujui dengan role ${user.role}.`
+            `Pengguna ${user.first_name} berhasil disetujui dengan role ${user.role}.`
         );
 
         // Memberitahukan pengguna bahwa akunnya telah disetujui.
         try {
             await ctx.telegram.sendMessage(
-                Number(telegramId),
+                user.telegram_id,
                 `Registrasi kamu telah disetujui!\nRole: ${user.role}`
             );
         } catch (error) {
@@ -246,11 +251,9 @@ export function registerAuthCommands(bot: Telegraf): void {
             );
         }
 
-        const userId = Number(telegramId);
+        const user = await authService.reject(Number(telegramId));
 
-        const success = await authService.reject(userId);
-
-        if (!success) {
+        if (!user) {
             return ctx.reply(
                 "User tidak ditemukan atau bukan berstatus pending."
             );
@@ -260,10 +263,9 @@ export function registerAuthCommands(bot: Telegraf): void {
             "Permintaan registrasi berhasil ditolak."
         );
 
-        // Memberitahukan pengguna bahwa registrasinya ditolak.
         try {
             await ctx.telegram.sendMessage(
-                userId,
+                user.telegram_id,
                 "Maaf, permintaan registrasi kamu ditolak oleh administrator."
             );
         } catch (error) {
@@ -286,11 +288,10 @@ export function registerAuthCommands(bot: Telegraf): void {
             );
         }
 
-        // Mengubah data pengguna menjadi daftar teks.
         const messages = users.map((user, index) =>
             [
-                `${index + 1}. ${user.firstName}`,
-                `ID: ${user.telegramId}`,
+                `${index + 1}. ${user.first_name} ${user.last_name ?? ""}`.trim(),
+                `ID: ${user.telegram_id}`,
                 `Role: ${user.role ?? "-"}`,
                 `Status: ${user.status}`,
             ].join("\n")
@@ -299,7 +300,6 @@ export function registerAuthCommands(bot: Telegraf): void {
         return ctx.reply(
             [
                 "DAFTAR PENGGUNA",
-                "",
                 ...messages,
             ].join("\n\n")
         );
@@ -332,10 +332,10 @@ export function registerAuthCommands(bot: Telegraf): void {
 
         const userId = Number(telegramId);
 
-        // Administrator utama hanya dapat dikelola melalui .env.
-        if (authService.isAdmin(userId)) {
+        // Mencegah administrator mengubah role administrator lain.
+        if (await isAdmin(userId)) {
             return ctx.reply(
-                "Administrator utama dikelola melalui ADMIN_IDS."
+                "Administrator tidak bisa diubah role-nya melalui command ini."
             );
         }
 
@@ -348,7 +348,7 @@ export function registerAuthCommands(bot: Telegraf): void {
         }
 
         return ctx.reply(
-            `Role ${user.firstName} berhasil diubah menjadi ${role}.`
+            `Role ${user.first_name} berhasil diubah menjadi ${user.role}.`
         );
     });
 
@@ -375,22 +375,26 @@ export function registerAuthCommands(bot: Telegraf): void {
 
         const userId = Number(telegramId);
 
-        // Mencegah administrator utama dinonaktifkan.
-        if (authService.isAdmin(userId)) {
+        // Mencegah administrator dinonaktifkan.
+        if (await isAdmin(userId)) {
             return ctx.reply(
-                "Administrator utama tidak bisa dinonaktifkan di sini."
+                "Administrator tidak bisa dinonaktifkan melalui command ini."
             );
         }
 
-        const success = await authService.setStatus(
+        const user = await authService.setStatus(
             userId,
             "disabled"
         );
 
+        if (!user) {
+            return ctx.reply(
+                "Pengguna tidak ditemukan atau statusnya bukan active."
+            );
+        }
+
         return ctx.reply(
-            success
-                ? "Pengguna berhasil dinonaktifkan."
-                : "Pengguna tidak ditemukan atau statusnya bukan active."
+            `Akun ${user.first_name} berhasil dinonaktifkan.`
         );
     });
 
@@ -417,15 +421,25 @@ export function registerAuthCommands(bot: Telegraf): void {
 
         const userId = Number(telegramId);
 
-        const success = await authService.setStatus(
+        if (await isAdmin(userId)) {
+            return ctx.reply(
+                "Administrator tidak perlu diaktifkan kembali."
+            );
+        }
+
+        const user = await authService.setStatus(
             userId,
             "active"
         );
 
+        if (!user) {
+            return ctx.reply(
+                "Pengguna tidak ditemukan atau statusnya bukan disabled."
+            );
+        }
+
         return ctx.reply(
-            success
-                ? "Pengguna berhasil diaktifkan kembali."
-                : "Pengguna tidak ditemukan atau statusnya bukan disabled."
+            `Akun ${user.first_name} berhasil diaktifkan kembali.`
         );
     });
 }
