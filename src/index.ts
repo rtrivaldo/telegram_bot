@@ -3,11 +3,15 @@ import { db } from "./config/database.js";
 import { initializeDatabase } from "./config/init-database.js";
 import app from "./api/app.js";
 import { startBot, bot } from "./bot/bot.js";
+import { migrateDatabase } from "./config/migrate-database.js";
 
 async function startApplication(): Promise<void> {
     try {
         // Initialize database and tables
         await initializeDatabase();
+
+        // Jalankan migration yang belum diterapkan.
+        await migrateDatabase();
 
         // Verify database connection
         await db.query("SELECT 1");

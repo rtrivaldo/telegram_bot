@@ -8,12 +8,14 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed:admins": "tsx src/database/seeders/admin.seeder.ts"
+    "seed:admins": "tsx src/database/seeders/admin.seeder.ts",
+    "seed:schedules": "tsx src/database/seeders/schedule.seeder.ts",
+    "db:migrate": "tsx src/config/migrate-database.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "dotenv": "^18.0.9",
     "express": "^5.3.0",

@@ -1,6 +1,7 @@
 import { Telegraf } from "telegraf";
 import { env } from "../config/env.js";
 import { registerAuthCommands } from "./commands/auth.commands.js";
+import { registerScheduleCommands } from "./commands/schedule.commands.js";
 
 // Membuat instance Telegram Bot.
 export const bot = new Telegraf(env.BOT_TOKEN);
@@ -64,9 +65,19 @@ bot.help(async (ctx) => {
             "admin - Administrator",
             "sales - Input data outlet",
             "supervisor - Memantau aktivitas sales",
+            "",
+            "SALES COMMANDS",
+            "/jadwal - Melihat jadwal hari ini",
+            "/jadwal Senin - Melihat jadwal hari tertentu",
         ].join("\n")
     );
 });
 
 // Mendaftarkan command autentikasi dan administrasi.
 registerAuthCommands(bot);
+
+// Mendaftarkan command autentikasi dan administrasi.
+registerAuthCommands(bot);
+
+// Mendaftarkan command jadwal kunjungan.
+registerScheduleCommands(bot);

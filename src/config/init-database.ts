@@ -61,6 +61,8 @@ async function createTables(): Promise<void> {
             role VARCHAR(20),
             status VARCHAR(20) NOT NULL DEFAULT 'pending',
 
+            salesforce_code VARCHAR(100),
+
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -79,6 +81,58 @@ async function createTables(): Promise<void> {
                         'disabled'
                     )
                 )
+        );
+    `);
+
+    // Menambahkan kolom salesforce_code jika belum ada
+    await db.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS salesforce_code VARCHAR(100);
+    `);
+
+    // Outlet visit schedules table
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS outlet_visit_schedules (
+            id BIGSERIAL PRIMARY KEY,
+
+            outlet_id VARCHAR(50) NOT NULL,
+            no_rs VARCHAR(50) NOT NULL,
+            outlet_name VARCHAR(255) NOT NULL,
+
+            day VARCHAR(20) NOT NULL,
+            salesforce_code VARCHAR(100) NOT NULL,
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+            CONSTRAINT outlet_schedule_day_check
+                CHECK (
+                    LOWER(day) IN (
+                        'senin',
+                        'selasa',
+                        'rabu',
+                        'kamis',
+                        'jumat',
+                        'sabtu',
+                        'minggu'
+                    )
+                )
+        );
+    `);
+
+    // Index untuk mempercepat pencarian berdasarkan salesforce_code dan day
+    await db.query(`
+        CREATE INDEX IF NOT EXISTS idx_schedule_salesforce_day
+        ON outlet_visit_schedules (salesforce_code, day);
+    `);
+
+    // Index untuk memastikan kombinasi unik outlet_id, salesforce_code, dan day
+    await db.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_schedule_unique
+        ON outlet_visit_schedules (
+            outlet_id,
+            salesforce_code,
+            LOWER(day)
         );
     `);
 

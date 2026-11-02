@@ -17,6 +17,7 @@ export interface User {
     last_name: string | null;
     role: UserRole | null;
     status: UserStatus;
+    salesforce_code: string | null;
     created_at: Date;
     updated_at: Date;
 }
@@ -29,6 +30,7 @@ interface UserRow {
     last_name: string | null;
     role: UserRole | null;
     status: UserStatus;
+    salesforce_code: string | null;
     created_at: Date;
     updated_at: Date;
 }
