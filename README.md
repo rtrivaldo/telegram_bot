@@ -175,7 +175,7 @@ Make sure you have installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/rtrivaldo/telegram_bot
 cd telegram-sales-bot
 ```
 
