@@ -1,13 +1,11 @@
 import { Client } from "pg";
 import { env } from "./env.js";
-import { db } from "./database.js";
 
 function quoteIdentifier(identifier: string): string {
     return `"${identifier.replaceAll('"', '""')}"`;
 }
 
 export async function initializeDatabase(): Promise<void> {
-    // 1. Connect ke database bawaan PostgreSQL
     const client = new Client({
         host: env.DB_HOST,
         port: env.DB_PORT,
@@ -19,13 +17,11 @@ export async function initializeDatabase(): Promise<void> {
     try {
         await client.connect();
 
-        // 2. Periksa apakah database sudah tersedia
         const result = await client.query(
             "SELECT 1 FROM pg_database WHERE datname = $1",
             [env.DB_NAME],
         );
 
-        // 3. Buat database jika belum tersedia
         if (result.rowCount === 0) {
             console.log(`Creating database: ${env.DB_NAME}`);
 
@@ -41,112 +37,5 @@ export async function initializeDatabase(): Promise<void> {
         await client.end();
     }
 
-    // 4. Buat tabel menggunakan koneksi database proyek
-    await createTables();
-
     console.log("Database initialization completed.");
-}
-
-async function createTables(): Promise<void> {
-    // Users table
-    await db.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id BIGSERIAL PRIMARY KEY,
-
-            telegram_id BIGINT UNIQUE NOT NULL,
-            username VARCHAR(255),
-            first_name VARCHAR(255) NOT NULL,
-            last_name VARCHAR(255),
-
-            role VARCHAR(20),
-            status VARCHAR(20) NOT NULL DEFAULT 'pending',
-
-            salesforce_code VARCHAR(100),
-
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-            CONSTRAINT users_role_check
-                CHECK (
-                    role IS NULL OR
-                    role IN ('admin', 'sales', 'supervisor')
-                ),
-
-            CONSTRAINT users_status_check
-                CHECK (
-                    status IN (
-                        'pending',
-                        'active',
-                        'rejected',
-                        'disabled'
-                    )
-                )
-        );
-    `);
-
-    // Menambahkan kolom salesforce_code jika belum ada
-    await db.query(`
-        ALTER TABLE users
-        ADD COLUMN IF NOT EXISTS salesforce_code VARCHAR(100);
-    `);
-
-    // Outlet visit schedules table
-    await db.query(`
-        CREATE TABLE IF NOT EXISTS outlet_visit_schedules (
-            id BIGSERIAL PRIMARY KEY,
-
-            outlet_id VARCHAR(50) NOT NULL,
-            no_rs VARCHAR(50) NOT NULL,
-            outlet_name VARCHAR(255) NOT NULL,
-
-            day VARCHAR(20) NOT NULL,
-            salesforce_code VARCHAR(100) NOT NULL,
-
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-            CONSTRAINT outlet_schedule_day_check
-                CHECK (
-                    LOWER(day) IN (
-                        'senin',
-                        'selasa',
-                        'rabu',
-                        'kamis',
-                        'jumat',
-                        'sabtu',
-                        'minggu'
-                    )
-                )
-        );
-    `);
-
-    // Index untuk mempercepat pencarian berdasarkan salesforce_code dan day
-    await db.query(`
-        CREATE INDEX IF NOT EXISTS idx_schedule_salesforce_day
-        ON outlet_visit_schedules (salesforce_code, day);
-    `);
-
-    // Index untuk memastikan kombinasi unik outlet_id, salesforce_code, dan day
-    await db.query(`
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_schedule_unique
-        ON outlet_visit_schedules (
-            outlet_id,
-            salesforce_code,
-            LOWER(day)
-        );
-    `);
-
-    // Index untuk mempercepat pencarian berdasarkan status
-    await db.query(`
-        CREATE INDEX IF NOT EXISTS idx_users_status
-        ON users(status);
-    `);
-
-    // Index untuk pencarian berdasarkan role
-    await db.query(`
-        CREATE INDEX IF NOT EXISTS idx_users_role
-        ON users(role);
-    `);
-
-    console.log("Tables and indexes created successfully.");
 }

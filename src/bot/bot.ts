@@ -2,9 +2,16 @@ import { Telegraf } from "telegraf";
 import { env } from "../config/env.js";
 import { registerAuthCommands } from "./commands/auth.commands.js";
 import { registerScheduleCommands } from "./commands/schedule.commands.js";
+import { registerOutletCommands } from "./commands/outlet.commands.js";
 
 // Membuat instance Telegram Bot.
 export const bot = new Telegraf(env.BOT_TOKEN);
+
+bot.command("test", async (ctx) => {
+    console.log("TEST COMMAND RECEIVED:", ctx.message.text);
+
+    await ctx.reply("Bot berhasil menerima command!");
+});
 
 // Status Telegram Bot.
 export const botStatus = {
@@ -50,34 +57,54 @@ bot.help(async (ctx) => {
             "USER COMMANDS",
             "/start - Memulai bot",
             "/register - Registrasi akun",
-            "/me - Melihat profil",
-            "",
-            "ADMIN COMMANDS",
-            "/pending - Permintaan registrasi",
-            "/approve ID ROLE - Approve pengguna",
-            "/reject ID - Reject pengguna",
-            "/users - Daftar pengguna",
-            "/setrole ID ROLE - Mengubah role",
-            "/disable ID - Menonaktifkan akun",
-            "/enable ID - Mengaktifkan akun",
-            "",
-            "AVAILABLE ROLES",
-            "admin - Administrator",
-            "sales - Input data outlet",
-            "supervisor - Memantau aktivitas sales",
+            "/me - Melihat profil akun",
+            "/help - Menampilkan panduan",
             "",
             "SALES COMMANDS",
-            "/jadwal - Melihat jadwal hari ini",
-            "/jadwal Senin - Melihat jadwal hari tertentu",
+            "/jadwal - Melihat jadwal kunjungan hari ini",
+            "/jadwal Jumat - Melihat jadwal pada hari tertentu",
+            "",
+            "ADMIN & SUPERVISOR COMMANDS",
+            "/jadwalsales - Melihat seluruh jadwal sales",
+            "/jadwalsales Jumat - Filter jadwal berdasarkan hari",
+            "/jadwalsales 123456789 - Filter berdasarkan Telegram ID",
+            "/jadwalsales 123456789 Jumat - Filter sales dan hari",
+            "",
+            "OUTLET COMMANDS",
+            "/outlets - Melihat seluruh daftar outlet",
+            "/outlet ID_OUTLET - Melihat detail outlet",
+            "",
+            "ADMIN COMMANDS",
+            "/pending - Melihat permintaan registrasi",
+            "/approve ID ROLE - Menyetujui registrasi",
+            "/reject ID - Menolak registrasi",
+            "/users - Melihat seluruh pengguna",
+            "/setrole ID ROLE_BARU - Mengubah role pengguna",
+            "/disable ID - Menonaktifkan akun",
+            "/enable ID - Mengaktifkan akun",
+            "/tambahoutlet ID NO_RS NAMA_OUTLET - Menambah outlet",
+            "/editoutlet ID_OUTLET NO_RS_BARU NAMA_OUTLET_BARU - Mengubah data outlet",
+            "/hapusoutlet ID_OUTLET - Menghapus outlet",
+            "",
+            "AVAILABLE ROLES",
+            "admin - Administrator sistem",
+            "sales - Menginput data kunjungan outlet",
+            "supervisor - Memantau aktivitas sales",
+            "",
+            "NOTES",
+            "- ID pada command admin menggunakan ID pengguna dari database.",
+            "- ID_OUTLET menggunakan Outlet ID bisnis.",
+            "- Telegram ID menggunakan ID akun Telegram.",
         ].join("\n")
     );
 });
 
-// Mendaftarkan command autentikasi dan administrasi.
-registerAuthCommands(bot);
 
 // Mendaftarkan command autentikasi dan administrasi.
 registerAuthCommands(bot);
 
 // Mendaftarkan command jadwal kunjungan.
 registerScheduleCommands(bot);
+
+// Mendaftarkan command outlet.
+registerOutletCommands(bot);

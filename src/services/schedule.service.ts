@@ -14,11 +14,29 @@ const DAYS = [
 class ScheduleService {
     async getSchedule(
         salesforceCode: string,
-        day: string
+        day: string,
     ) {
         return scheduleRepository.findBySalesforceAndDay(
             salesforceCode,
-            day
+            day,
+        );
+    }
+
+    async getAllSchedules(day?: string) {
+        if (day) {
+            return scheduleRepository.findAllByDay(day);
+        }
+
+        return scheduleRepository.findAll();
+    }
+
+    async getSchedulesByTelegramId(
+        telegramId: number,
+        day?: string,
+    ) {
+        return scheduleRepository.findByTelegramId(
+            telegramId,
+            day,
         );
     }
 

@@ -1,5 +1,5 @@
 
-import { db } from "../../config/database.js";
+import { db } from "../../src/config/database.js";
 
 const schedules = [
     {
