@@ -7,7 +7,7 @@ const admins = [
         firstName: "Rivaldo",
         lastName: "Tandoko",
         role: "admin",
-        status: "pending",
+        status: "active",
         salesforceCode: "SF-TIMIKA-1-PALDO",
     },
 ];

@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed:admins": "tsx database/seeders/admin.seeder.ts",
+    "seed:outlets": "tsx database/seeders/outlet.seeder.ts",
     "seed:schedules": "tsx database/seeders/schedule.seeder.ts",
     "db:migrate": "tsx src/config/run-migrations.ts"
   },

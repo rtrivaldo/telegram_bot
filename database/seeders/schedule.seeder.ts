@@ -9,19 +9,17 @@ const schedules = [
         day: "Jumat",
         salesforceCode: "SF-TIMIKA-1-PALDO",
     },
+
+    // Tambahkan outlet lainnya di sini.
 ];
 
 async function seedSchedules() {
-    const client = await db.connect();
-
     try {
         console.log("Seeding outlet schedules...");
 
-        await client.query("BEGIN");
-
         for (const schedule of schedules) {
-            // Find or create outlet
-            const outletResult = await client.query(
+            // 1. Insert atau update outlet.
+            const outletResult = await db.query(
                 `
                 INSERT INTO outlets (
                     outlet_id,
@@ -40,60 +38,76 @@ async function seedSchedules() {
                     schedule.outletId,
                     schedule.noRs,
                     schedule.outletName,
-                ],
+                ]
             );
 
             const outletId = outletResult.rows[0].id;
 
-            // Find sales user
-            const userResult = await client.query(
+            // 2. Cari sales berdasarkan Salesforce Code.
+            const userResult = await db.query(
                 `
                 SELECT id
                 FROM users
                 WHERE salesforce_code = $1
                 LIMIT 1
                 `,
-                [schedule.salesforceCode],
+                [schedule.salesforceCode]
             );
 
             if (userResult.rowCount === 0) {
                 throw new Error(
-                    `Sales user not found: ${schedule.salesforceCode}`,
+                    `Sales user not found: ${schedule.salesforceCode}`
                 );
             }
 
             const userId = userResult.rows[0].id;
 
-            // Insert schedule
-            await client.query(
+            // 3. Periksa apakah jadwal sudah tersedia.
+            const existingSchedule = await db.query(
                 `
-                INSERT INTO outlet_visit_schedules (
-                    user_id,
-                    outlet_id,
-                    day
-                )
-                VALUES ($1, $2, $3)
-                ON CONFLICT (user_id, outlet_id, day)
-                DO NOTHING
+                SELECT id
+                FROM outlet_visit_schedules
+                WHERE user_id = $1
+                  AND outlet_id = $2
+                  AND day = $3
+                LIMIT 1
                 `,
-                [userId, outletId, schedule.day.toLowerCase()],
+                [userId, outletId, schedule.day.toLowerCase()]
             );
 
-            console.log(
-                `Schedule seeded: ${schedule.outletName}`,
-            );
+            // 4. Insert jika jadwal belum tersedia.
+            if (existingSchedule.rowCount === 0) {
+                await db.query(
+                    `
+                    INSERT INTO outlet_visit_schedules (
+                        user_id,
+                        outlet_id,
+                        day
+                    )
+                    VALUES ($1, $2, $3)
+                    `,
+                    [
+                        userId,
+                        outletId,
+                        schedule.day.toLowerCase(),
+                    ]
+                );
+
+                console.log(
+                    `Schedule inserted: ${schedule.outletName}`
+                );
+            } else {
+                console.log(
+                    `Schedule already exists: ${schedule.outletName}`
+                );
+            }
         }
-
-        await client.query("COMMIT");
 
         console.log("Schedule seeding completed.");
     } catch (error) {
-        await client.query("ROLLBACK");
-
         console.error("Failed to seed schedules:", error);
         process.exitCode = 1;
     } finally {
-        client.release();
         await db.end();
     }
 }
