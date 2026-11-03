@@ -1,14 +1,15 @@
-
 import { db } from "../../src/config/database.js";
 
 const admins = [
     {
-        telegramId: 871331604, // Ganti dengan Telegram ID admin pertama
-        firstName: "Admin",
-        lastName: "Utama",
-        username: "username_admin",
+        telegramId: 871331604,
+        username: "rtrivaldo05",
+        firstName: "Rivaldo",
+        lastName: "Tandoko",
+        role: "admin",
+        status: "pending",
+        salesforceCode: "SF-TIMIKA-1-PALDO",
     },
-    // Tambahkan admin lainnya di sini
 ];
 
 async function seedAdmins() {
@@ -22,29 +23,34 @@ async function seedAdmins() {
 
             await db.query(
                 `
-          INSERT INTO users (
-            telegram_id,
-            username,
-            first_name,
-            last_name,
-            role,
-            status
-          )
-          VALUES ($1, $2, $3, $4, 'admin', 'active')
-          ON CONFLICT (telegram_id)
-          DO UPDATE SET
-            username = EXCLUDED.username,
-            first_name = EXCLUDED.first_name,
-            last_name = EXCLUDED.last_name,
-            role = 'admin',
-            status = 'active',
-            updated_at = NOW()
-        `,
+                INSERT INTO users (
+                    telegram_id,
+                    username,
+                    first_name,
+                    last_name,
+                    role,
+                    status,
+                    salesforce_code
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (telegram_id)
+                DO UPDATE SET
+                    username = EXCLUDED.username,
+                    first_name = EXCLUDED.first_name,
+                    last_name = EXCLUDED.last_name,
+                    role = EXCLUDED.role,
+                    status = EXCLUDED.status,
+                    salesforce_code = EXCLUDED.salesforce_code,
+                    updated_at = NOW()
+                `,
                 [
                     admin.telegramId,
                     admin.username,
                     admin.firstName,
                     admin.lastName,
+                    admin.role,
+                    admin.status,
+                    admin.salesforceCode,
                 ]
             );
 
