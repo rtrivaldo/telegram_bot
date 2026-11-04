@@ -1,5 +1,5 @@
 
-import type { Telegraf } from "telegraf";
+import type { Scenes, Telegraf } from "telegraf";
 
 import {
     authService,
@@ -44,7 +44,7 @@ function formatDate(date: Date): string {
 }
 
 // Mendaftarkan seluruh command autentikasi dan administrasi.
-export function registerAuthCommands(bot: Telegraf): void {
+export function registerAuthCommands(bot: Telegraf<Scenes.WizardContext>): void {
 
     // ==========================================
     // REGISTRATION COMMAND

@@ -1,5 +1,5 @@
 
-import type { Telegraf } from "telegraf";
+import type { Scenes, Telegraf } from "telegraf";
 
 import { authService } from "../../services/auth.service.js";
 import { scheduleService } from "../../services/schedule.service.js";
@@ -53,7 +53,7 @@ function formatSalesSchedules(
     return messages.join("\n\n--------------------\n\n");
 }
 
-export function registerScheduleCommands(bot: Telegraf): void {
+export function registerScheduleCommands(bot: Telegraf<Scenes.WizardContext>): void {
 
     // ==========================================
     // SALES COMMAND

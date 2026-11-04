@@ -1,5 +1,5 @@
 
-import type { Telegraf } from "telegraf";
+import type { Scenes, Telegraf } from "telegraf";
 import { authService } from "../../services/auth.service.js";
 import { outletService } from "../../services/outlet.service.js";
 import type { CreateOutletInput } from "../../repositories/outlet.repository.js";
@@ -36,7 +36,7 @@ function formatOutlet(
 }
 
 // Mendaftarkan seluruh command outlet.
-export function registerOutletCommands(bot: Telegraf): void {
+export function registerOutletCommands(bot: Telegraf<Scenes.WizardContext>): void {
 
     // ==========================================
     // VIEW OUTLET COMMANDS
