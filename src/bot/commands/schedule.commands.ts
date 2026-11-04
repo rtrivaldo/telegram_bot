@@ -40,6 +40,7 @@ function formatSalesSchedules(
 
         messages.push(
             [
+                "",
                 `SALES: ${sales.sales_name}`,
                 `Telegram ID: ${sales.telegram_id}`,
                 `Salesforce: ${sales.salesforce_code ?? "-"}`,
